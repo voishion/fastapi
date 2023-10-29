@@ -12,6 +12,17 @@
 <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/binkuolo/fastapi?style=social">
 </p>
 
+# 运行项目
+Python版本 
+>python3.8
+
+安装依赖包
+`pip install -r requirements.txt`
+
+运行项目
+`uvicorn app:app --reload`
+
+
 # 学习资料
 
 > [gitee 仓库](https://gitee.com/binkuolo/fastapi)
