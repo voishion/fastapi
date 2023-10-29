@@ -20,6 +20,13 @@ def random_str():
     return str(only)
 
 
+def random_uuid():
+    """
+    随机生成UUID
+    """
+    return str(uuid.uuid1()).replace('-', '')
+
+
 def en_password(psw: str):
     """
     密码加密

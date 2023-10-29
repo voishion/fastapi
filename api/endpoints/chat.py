@@ -15,7 +15,7 @@ from fastapi import APIRouter
 from starlette.endpoints import WebSocketEndpoint
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from schemas.base import WebsocketMessage
+from schemas.base import AiChatPullMessage
 
 router = APIRouter()
 
@@ -68,7 +68,7 @@ class AiChat(WebSocketEndpoint):
     @classmethod
     async def on_receive(cls, web_socket: WebSocket, msg: Any):
         try:
-            msg = WebsocketMessage(**msg)
+            msg = AiChatPullMessage(**msg)
             print(f"收到了来自[{msg.user}]的[{msg.action}]消息:[{msg.data}]")
             # 开启异步线程处理问题
         except Exception as e:

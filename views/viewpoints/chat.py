@@ -11,6 +11,7 @@
 from fastapi import Request, APIRouter
 from fastapi.responses import HTMLResponse
 from api.endpoints.chat import AiChat
+from core import Utils
 from core.Response import success, fail
 from schemas.base import AiChatPushMessage
 
@@ -24,7 +25,8 @@ async def chat(request: Request):
     :param request:
     :return:
     """
-    return request.app.state.views.TemplateResponse("chat/chat.html", {"request": request})
+    user_id = Utils.random_uuid()
+    return request.app.state.views.TemplateResponse("chat/chat.html", {"request": request, "user_id": user_id})
 
 
 # 新的HTTP端点用于发送消息

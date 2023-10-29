@@ -26,6 +26,15 @@ class WebsocketMessage(BaseModel):
     data: Optional[Any]
 
 
+class AiChatPullMessage(BaseModel):
+    """
+    AiChat聊天拉取消息schemas类
+    """
+    action: Optional[str]
+    user: Optional[str]
+    data: Optional[Any]
+
+
 # 定义用于接受消息的模型
 class AiChatPushMessage(BaseModel):
     """

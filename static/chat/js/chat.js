@@ -1,11 +1,6 @@
-let user_id = "325489464903640";
-const protocol = window.location.protocol.indexOf('https:') === 0 ? 'wss' : 'ws';
-let webSocketUrl = `${protocol}://${window.location.host}/ws/aichat/test?u_id=${user_id}`;
-console.log(webSocketUrl)
-const webSocket = new WebSocket(webSocketUrl);
+let webSocket = null;
 
-
-$(document).ready(function () {
+function init() {
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
             if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
@@ -13,85 +8,73 @@ $(document).ready(function () {
             }
         }
     });
+}
 
-    function getUa() {
-        let userAgentStr = navigator.userAgent
-        const userAgentObj = {
-            browserName: '',    // 浏览器名称
-            browserVersion: '', // 浏览器版本
-            osName: '',         // 操作系统名称
-            osVersion: '',      // 操作系统版本
-            deviceName: '',     // 设备名称
-        }
+function connectWebSocket() {
+    let user_id = $('#user_id').val();
+    const protocol = window.location.protocol.indexOf('https:') === 0 ? 'wss' : 'ws';
+    webSocket = new WebSocket(`${protocol}://${window.location.host}/ws/aichat/test?u_id=${user_id}`);
+    webSocket.onopen = () => managerWebSocket();
+    webSocket.onerror = () => {
+        console.log('websocket client happened error');
+        clearWebSocket();
+        setTimeout(connectWebSocket, 3000);
+    };
+}
 
-        for (let key in browserReg) {
-            if (browserReg[key].test(userAgentStr)) {
-                userAgentObj.browserName = key
-                if (key === 'Chrome') {
-                    userAgentObj.browserVersion = userAgentStr.split('Chrome/')[1].split(' ')[0]
-                } else if (key === 'IE') {
-                    userAgentObj.browserVersion = userAgentStr.split('MSIE ')[1].split(' ')[1]
-                } else if (key === 'Firefox') {
-                    userAgentObj.browserVersion = userAgentStr.split('Firefox/')[1]
-                } else if (key === 'Opera') {
-                    userAgentObj.browserVersion = userAgentStr.split('Version/')[1]
-                } else if (key === 'Safari') {
-                    userAgentObj.browserVersion = userAgentStr.split('Version/')[1].split(' ')[0]
-                } else if (key === '360') {
-                    userAgentObj.browserVersion = ''
-                } else if (key === 'QQBrowswe') {
-                    userAgentObj.browserVersion = userAgentStr.split('Version/')[1].split(' ')[0]
-                }
+function managerWebSocket() {
+    if (webSocket) {
+        console.log('websocket client is open...');
+        webSocket.onmessage = function (event) {
+            printChatGPTResponse(JSON.parse(event.data))
+        };
+        // 断开监听
+        webSocket.onclose = () => {
+            console.log('websocket client has been disconnected, reconnecting...');
+            clearWebSocket();
+            connectWebSocket();
+        };
+    } else {
+        console.log('websocket client is not open, reconnecting...');
+        connectWebSocket();
+    }
+}
+
+function clearWebSocket() {
+    webSocket = null;
+}
+
+function printChatGPTResponse(response) {
+    let message = response.data.content;
+    let index = 0;
+    const responseText = document.getElementById("chatgpt-response");
+    // 创建一个定时器，每隔一段时间打印一个字符
+    const interval = setInterval(function () {
+            responseText.innerHTML += message[index];
+            index++;
+            // 当打印完成时，清除定时器
+            if (index >= message.length) {
+                clearInterval(interval);
             }
-        }
+        },
+        50); // 每隔50毫秒打印一个字符
+}
 
-        for (let key in deviceReg) {
-            if (deviceReg[key].test(userAgentStr)) {
-                userAgentObj.osName = key
-                if (key === 'Windows') {
-                    userAgentObj.osVersion = userAgentStr.split('Windows NT ')[1].split(';')[0]
-                } else if (key === 'Mac') {
-                    userAgentObj.osVersion = userAgentStr.split('Mac OS X ')[1].split(')')[0]
-                } else if (key === 'iPhone') {
-                    userAgentObj.osVersion = userAgentStr.split('iPhone OS ')[1].split(' ')[0]
-                } else if (key === 'iPad') {
-                    userAgentObj.osVersion = userAgentStr.split('iPad; CPU OS ')[1].split(' ')[0]
-                } else if (key === 'Android') {
-                    userAgentObj.osVersion = userAgentStr.split('Android ')[1].split(';')[0]
-                    userAgentObj.deviceName = userAgentStr.split('(Linux; Android ')[1].split('; ')[1].split(' Build')[0]
-                }
-            }
+$(document).ready(function () {
+    init();
 
-        }
-        return userAgentObj
-    }
-
-
-    // 连接建立后的回调函数
-    webSocket.onopen = function () {
-        console.log("已经建立websocket连接")
-    }
-    // 接收到服务器消息后的回调函数
-    webSocket.onmessage = function (event) {
-        const received_msg = event.data;
-        console.log(received_msg)
-    }
-    // 连接关闭后的回调函数
-    webSocket.onclose = function () {
-        // 关闭 websocket
-        console.log("连接已关闭...");
-    }
+    connectWebSocket();
 
     // submit snippet
     $('#call-chat-server').on('click', function () {
-        console.log("xsaxsaxsa")
-        const $snippet_textarea = $('#chat-gpt-input');
-        const message = $snippet_textarea.val();
+        let user_id = $('#user_id').val();
+        const chatGptInput = $('#chat-gpt-input');
+        const message = chatGptInput.val();
         if (message.trim() !== '') {
             const data = {action: 'chat', 'user': user_id, data: message};
             webSocket.send(JSON.stringify(data));
-            $snippet_textarea.val('')
+            chatGptInput.val('')
         }
     })
-})
+});
 
