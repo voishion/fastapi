@@ -49,6 +49,9 @@ def check_token(token: str):
 class Echo(WebSocketEndpoint):
     encoding = "json"
     active_connections = []
+    """
+    活动websocket链接，[{'u_id':2, 'u_type':1, 'con':web_socket}]
+    """
 
     # WebSocket 连接
     async def on_connect(self, web_socket: WebSocket):
