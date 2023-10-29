@@ -11,7 +11,7 @@ router = APIRouter()
 
 
 @router.get("/", tags=["门户首页"], response_class=HTMLResponse)
-async def home(request: Request):
+async def index(request: Request):
     """
     门户首页
     :param request:

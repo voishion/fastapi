@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block page_title %}Ai{% endblock %}
+
+{% block head %}
+    {{ super() }}
+    <link rel="stylesheet" href="{{ url_for('static', path='/chat/css/chat.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="form-group">
+                    <label for="chatgpt-response"></label>
+                    <textarea class="form-control" id="chatgpt-response"
+                              placeholder="长途访问，请耐心等待回答 Ai生成它很快，但是由于网络问题我们需要等待，通常内容越长等待越久 如果长时间没反应请刷新页面重试"
+                              rows="26" resize="none"
+                              readonly="readonly"></textarea>
+                </div>
+            </div>
+            <div class="col-md-12 col-sm-12 col-xs-12">
+                <div class="form-group">
+                    <label for="chat-gpt-input"></label>
+                    <textarea class="form-control" id="chat-gpt-input" placeholder="输入问题描述信息" rows="3"
+                              resize="none" autocomplete="off"></textarea>
+                </div>
+                <div class="call-to-action right">
+                    <button id="call-chat-server" class="btn btn-large">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Click
+                        to
+                        <br>Answer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+<body>
+
+{% block scripts %}
+    {{ super() }}
+    <script type="text/javascript">
+        const socket = io('/');
+    </script>
+    <script src="{{ url_for('static', path='/chat/js/chat.js') }}"></script>
+{% endblock %}
