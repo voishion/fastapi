@@ -26,6 +26,17 @@ class WebsocketMessage(BaseModel):
     data: Optional[Any]
 
 
+# 定义用于接受消息的模型
+class AiChatPushMessage(BaseModel):
+    """
+    AiChat聊天推送消息schemas类
+    """
+    sender: Optional[str] = Field(description="发送者ID")
+    sender_type: Optional[str] = Field(description="发送者用户类型")
+    recipient: Optional[str] = Field(description="接收者用户ID")
+    message: Optional[str] = Field(description="要发送的数据")
+
+
 class WechatOAuthData(BaseModel):
     access_token: str
     expires_in: int
