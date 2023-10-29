@@ -1,3 +1,10 @@
+let user_id = "325489464903640";
+const protocol = window.location.protocol.indexOf('https:') === 0 ? 'wss' : 'ws';
+let webSocketUrl = `${protocol}://${window.location.host}/ws/aichat/test?u_id=${user_id}`;
+console.log(webSocketUrl)
+const webSocket = new WebSocket(webSocketUrl);
+
+
 $(document).ready(function () {
     $.ajaxSetup({
         beforeSend: function (xhr, settings) {
@@ -59,17 +66,11 @@ $(document).ready(function () {
         return userAgentObj
     }
 
-    let user_id = "325489464903640";
-    const protocol = window.location.protocol.indexOf('https:') === 0 ? 'wss' : 'ws';
-    const webSocket = new WebSocket(
-        `${protocol}://${window.location.host}/ws/aichat/test?u_id=${user_id}`
-    );
 
     // 连接建立后的回调函数
     webSocket.onopen = function () {
         console.log("已经建立websocket连接")
     }
-
     // 接收到服务器消息后的回调函数
     webSocket.onmessage = function (event) {
         const received_msg = event.data;
@@ -87,7 +88,8 @@ $(document).ready(function () {
         const $snippet_textarea = $('#chat-gpt-input');
         const message = $snippet_textarea.val();
         if (message.trim() !== '') {
-            webSocket.send(message);
+            const data = {action: 'chat', 'user': user_id, data: message};
+            webSocket.send(JSON.stringify(data));
             $snippet_textarea.val('')
         }
     })

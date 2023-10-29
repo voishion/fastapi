@@ -76,14 +76,9 @@
     <script src="{{ url_for('static', path='/js/jquery.magnific-popup.min.js') }}"></script>
     <script src="{{ url_for('static', path='/js/jquery.meanmenu.js') }}"></script>
     <script src="{{ url_for('static', path='/js/plugins.js') }}"></script>
-{#    <script src="{{ url_for('static', path='/js/socket.io.min.js') }}"></script>#}
     <script src="{{ url_for('static', path='/js/main.js') }}"></script>
-{#    {{ moment.include_moment(local_js=url_for('static', path='/js/moment-with-locales.min.js')) }}#}
     <script type="text/javascript">
         const root_url = "{{ url_for('index') }}";
-        {#const messages_url = "{{ url_for('chat.get_messages') }}";#}
-        {#var current_user_id = {{ current_user.id|default(0) }};#}
-        {#const csrf_token = "{{ csrf_token() }}";#}
     </script>
 {% endblock %}
 </body>
