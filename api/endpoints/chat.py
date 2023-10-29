@@ -45,14 +45,13 @@ class AiChat(WebSocketEndpoint):
         u_id = web_socket.query_params.get("u_id")
         real_ip = web_socket.headers.get('x-forwarded-for')
         real_host = web_socket.headers.get("host")
-        print(f"客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
         try:
             await web_socket.accept(subprotocol=None)
             for con in cls.active_connections:
                 # 把历史连接移除
                 if con["u_id"] == u_id:
                     cls.active_connections.remove(con)
-            print(f"客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
+            print(f"接入连接>>>客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
             # 加入新连接
             cls.active_connections.append({
                 "u_id": str(u_id),
@@ -85,7 +84,7 @@ class AiChat(WebSocketEndpoint):
                 u_id = con["u_id"]
                 # 移除已经断开的连接
                 cls.active_connections.remove(con)
-        print(f"客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
+        print(f"丢失连接<<<客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
         await cls.__print_online_num()
 
     @classmethod

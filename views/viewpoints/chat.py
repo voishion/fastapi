@@ -13,12 +13,12 @@ from fastapi.responses import HTMLResponse
 from api.endpoints.chat import AiChat
 from core import Utils
 from core.Response import success, fail
-from schemas.base import AiChatPushMessage
+from schemas.base import AiChatPushMessage, BaseResp
 
 router = APIRouter()
 
 
-@router.get("/chat", tags=["AiChat"], response_class=HTMLResponse)
+@router.get("/chat", summary="AiChat页面", response_class=HTMLResponse)
 async def chat(request: Request):
     """
     AiChat
@@ -30,9 +30,8 @@ async def chat(request: Request):
 
 
 # 新的HTTP端点用于发送消息
-@router.post("/push_msg", tags=["AiChat"], summary="所有角色下拉选项专用")
+@router.post("/push_msg", summary="所有角色下拉选项专用", response_model=BaseResp)
 async def send_message(message: AiChatPushMessage):
-
     result = await AiChat.send_message(sender=message.sender, sender_type=message.sender_type,
                                        recipient=message.recipient, data={'content': message.message})
     if result:

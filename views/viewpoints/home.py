@@ -10,7 +10,7 @@ from fastapi.responses import HTMLResponse
 router = APIRouter()
 
 
-@router.get("/", tags=["门户首页"], response_class=HTMLResponse)
+@router.get("/", summary="门户首页页面", response_class=HTMLResponse)
 async def index(request: Request):
     """
     门户首页

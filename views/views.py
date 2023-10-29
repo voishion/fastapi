@@ -9,6 +9,6 @@ from views.viewpoints import home, chat
 
 views_router = APIRouter()
 
-views_router.include_router(home.router)
-views_router.include_router(chat.router)
+views_router.include_router(home.router, tags=["门户首页"])
+views_router.include_router(chat.router, tags=["AiChat"])
 

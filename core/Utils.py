@@ -24,7 +24,7 @@ def random_uuid():
     """
     随机生成UUID
     """
-    return str(uuid.uuid1()).replace('-', '')
+    return str(uuid.uuid4()).replace('-', '')
 
 
 def en_password(psw: str):
