@@ -29,8 +29,9 @@ async def chat(request: Request):
 
 # 新的HTTP端点用于发送消息
 @router.post("/push_msg", tags=["AiChat"], summary="所有角色下拉选项专用")
-async def send_message(message: AiChatPushMessage, aiChat=None):
-    result = await aiChat.send_message(sender=message.sender, sender_type=message.sender_type,
+async def send_message(message: AiChatPushMessage):
+
+    result = await AiChat.send_message(sender=message.sender, sender_type=message.sender_type,
                                        recipient=message.recipient, data={'content': message.message})
     if result:
         return success(msg="推送成功")
