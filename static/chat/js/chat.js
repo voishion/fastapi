@@ -27,7 +27,12 @@ function managerWebSocket() {
         console.log('websocket client is open...');
         webSocket.onmessage = function (event) {
             let response = JSON.parse(event.data);
-            printChatGPTResponse(response.data.content)
+            console.log(response);
+            if ('aichat' === response.sender_type) {
+                printAiChatGPTResponse(response.data.content)
+            } else {
+                printChatGPTResponse(response.data.content)
+            }
         };
         // 断开监听
         webSocket.onclose = () => {
@@ -61,6 +66,12 @@ function printChatGPTResponse(message) {
         },
         50); // 每隔50毫秒打印一个字符
 }
+function printAiChatGPTResponse(message) {
+    let index = 0;
+    const responseText = document.getElementById("chatgpt-response");
+    responseText.innerHTML += message;
+    scrollToBottom();
+}
 
 function scrollToBottom() {
     const chatgptResponse = $('#chatgpt-response');
@@ -81,7 +92,7 @@ $(document).ready(function () {
             const data = {action: 'chat', 'user': user_id, data: message};
             webSocket.send(JSON.stringify(data));
             chatGptInput.val('')
-            printChatGPTResponse('正在思考，请等待......')
+            printChatGPTResponse('正在思考，请等待......\n\n')
         }
     })
 });

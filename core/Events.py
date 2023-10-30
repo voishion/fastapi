@@ -4,11 +4,12 @@
 @Author: binkuolo
 @Des: fastapi事件监听
 """
-
+from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
 from fastapi import FastAPI
 from database.mysql import register_mysql
 from database.redis import sys_cache, code_cache
+from exts import aiChatThreadPool
 from aioredis import Redis
 
 
@@ -18,6 +19,7 @@ def startup(app: FastAPI) -> Callable:
     :param app: FastAPI
     :return: start_app
     """
+
     async def app_start() -> None:
         # APP启动完成后触发
         print("FastAPI已启动")
@@ -26,8 +28,10 @@ def startup(app: FastAPI) -> Callable:
         # 注入缓存到app state
         app.state.cache = await sys_cache()
         app.state.code_cache = await code_cache()
+        app.state.aiChatThreadPool = await aiChatThreadPool()
 
         pass
+
     return app_start
 
 
@@ -37,6 +41,7 @@ def stopping(app: FastAPI) -> Callable:
     :param app: FastAPI
     :return: stop_app
     """
+
     async def stop_app() -> None:
         # APP停止时触发
         print("FastAPI已停止")
@@ -44,5 +49,8 @@ def stopping(app: FastAPI) -> Callable:
         code: Redis = await app.state.code_cache
         await cache.close()
         await code.close()
+
+        aiChatTP: ThreadPoolExecutor = app.state.aiChatThreadPool
+        aiChatTP.shutdown()
 
     return stop_app

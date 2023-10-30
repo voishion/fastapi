@@ -8,16 +8,66 @@
     Site    : https://gitee.com/voishion
     Project : fastapi
 """
+import asyncio
 import json
+import time
 from typing import Any
 
+import openai
 from fastapi import APIRouter
 from starlette.endpoints import WebSocketEndpoint
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
-from schemas.base import AiChatPullMessage
+from schemas.base import AiChatPullMessage, AiChatPushMessage
 
 router = APIRouter()
+
+openai.api_base = "http://10.133.249.34:8000/v1"
+openai.api_key = "any"
+
+
+# 耗时的任务函数
+def aichat_process_task(msg: AiChatPullMessage):
+    print(f"处理来自[{msg.user}]的[{msg.action}]消息:[{msg.data}]")
+    time.sleep(1)
+    start_time = time.time()
+    # OpenAI API参数详解
+    # https://blog.csdn.net/watson2017/article/details/129055329
+    response = openai.ChatCompletion.create(
+        model="chatglm2-6b",
+        messages=[
+            {"role": "system", "content": ""},
+            {"role": "user", "content": msg.data}
+        ],
+        max_tokens=1024,
+        temperature=0.75,
+        stream=True
+    )
+    response_time = time.time()
+    print(f'请求耗时：{response_time - start_time:.2f} s')
+    t = None
+    for i in response:
+        # data = i  # type:openai.openai_object.OpenAIObject
+        t = time.time()
+        # print(type(i))
+        # print(json.dumps(i))
+        if "content" in i.choices[0].delta:
+            aichat_process_msg_push(msg.user, str(i.choices[0].delta.content))
+    print(f'\n总耗时： {t - start_time:.2f} s')
+    print("===结束===")
+
+
+def aichat_process_msg_push(user_id: str, msg: str):
+    """
+    AiChat处理结果消息推送
+    """
+    pushMsg = AiChatPushMessage
+    pushMsg.sender = 'aichat'
+    pushMsg.sender_type = 'aichat'
+    pushMsg.recipient = user_id
+    pushMsg.message = msg
+    # 同步函数中调用异步函数
+    asyncio.run(AiChat.send_message(pushMsg))
 
 
 class AiChat(WebSocketEndpoint):
@@ -70,6 +120,7 @@ class AiChat(WebSocketEndpoint):
             msg = AiChatPullMessage(**msg)
             print(f"收到了来自[{msg.user}]的[{msg.action}]消息:[{msg.data}]")
             # 开启异步线程处理问题
+            web_socket.app.state.aiChatThreadPool.submit(aichat_process_task, msg)
         except Exception as e:
             print(e)
 
@@ -95,19 +146,18 @@ class AiChat(WebSocketEndpoint):
         print(f"当前AiChat在线用户数:{len(cls.active_connections)}")
 
     @classmethod
-    async def send_message(cls,
-                           sender: str,
-                           sender_type: str,
-                           recipient: str,
-                           data: dict):
+    async def send_message(cls, message):
         """
         消息发送
-        :param sender: 发送者ID
-        :param sender_type: 发送者用户类型
-        :param recipient: 接收者用户ID
-        :param data: 要发送的数据
-        :return: bool，true-发送成功，false-对方不在线
+        :param message: AiChat聊天推送消息
+        :return: True-发送成功，False-对方不在线
         """
+
+        sender = message.sender
+        sender_type = message.sender_type
+        recipient = message.recipient
+        data = {'content': message.message}
+
         is_online = False  # 用户在线状态
         for con in cls.active_connections:
             # 找到到对方
@@ -118,9 +168,9 @@ class AiChat(WebSocketEndpoint):
                     "sender_type": sender_type,
                     "data": data
                 }
-                message = json.dumps(structure)
-                print(f"主动推送数据:{message}")
-                await con["con"].send_text(message)
+                content = json.dumps(structure)
+                # print(f"主动推送数据:{content}")
+                await con["con"].send_text(content)
         if is_online:
             return True
         else:
