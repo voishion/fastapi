@@ -6,11 +6,13 @@
 """
 from concurrent.futures import ThreadPoolExecutor
 from typing import Callable
+
+from aioredis import Redis
 from fastapi import FastAPI
+
 from database.mysql import register_mysql
 from database.redis import sys_cache, code_cache
 from exts import aiChatThreadPool
-from aioredis import Redis
 
 
 def startup(app: FastAPI) -> Callable:

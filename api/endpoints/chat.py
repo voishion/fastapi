@@ -20,15 +20,19 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 
 from schemas.base import AiChatPullMessage, AiChatPushMessage
 
+from logger import log
+
 router = APIRouter()
 
-openai.api_base = "http://10.133.249.34:8000/v1"
+# openai.api_base = "http://10.133.249.34:8000/v1"
+openai.api_base = "https://esb.gt.cn/v1"
+
 openai.api_key = "any"
 
 
 # 耗时的任务函数
 def aichat_process_task(msg: AiChatPullMessage):
-    print(f"处理来自[{msg.user}]的[{msg.action}]消息:[{msg.data}]")
+    log.info(f"处理来自[{msg.user}]的[{msg.action}]消息:[{msg.data}]")
     time.sleep(1)
     start_time = time.time()
     # OpenAI API参数详解
@@ -41,20 +45,22 @@ def aichat_process_task(msg: AiChatPullMessage):
         ],
         max_tokens=1024,
         temperature=0.75,
-        stream=True
+        stream=True,
+        headers={
+            '_idp_session': 'MTAuMTMzLjY4LjE0NQ%3D%3D%7COGEzNGM5ZjAxNzE1MjVkZjllYTAxNzIwOWVlODkxYTA4YmQwZmE3NGE5NWMxNTJiMDU3NzFkZWM1NjIwODBjOA%3D%3D%7CmvflOeoXJyq9cbkH536tKwvw6Fc%3D'}
     )
-    response_time = time.time()
-    print(f'请求耗时：{response_time - start_time:.2f} s')
+    request_time = time.time() - start_time
     t = None
     for i in response:
         # data = i  # type:openai.openai_object.OpenAIObject
         t = time.time()
-        # print(type(i))
-        # print(json.dumps(i))
+        # log.info(type(i))
+        # log.info(json.dumps(i))
         if "content" in i.choices[0].delta:
             aichat_process_msg_push(msg.user, str(i.choices[0].delta.content))
-    print(f'\n总耗时： {t - start_time:.2f} s')
-    print("===结束===")
+    tts = t - start_time
+    ats = tts - request_time
+    log.error(f'AiChatGPT回答结束，总耗时:{tts:.2f} s，请求耗时:{request_time:.2f} s，回答耗时:{ats:.2f} s')
 
 
 def aichat_process_msg_push(user_id: str, msg: str):
@@ -101,7 +107,7 @@ class AiChat(WebSocketEndpoint):
                 # 把历史连接移除
                 if con["u_id"] == u_id:
                     cls.active_connections.remove(con)
-            print(f"接入连接>>>客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
+            log.error(f"接入连接>>>客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
             # 加入新连接
             cls.active_connections.append({
                 "u_id": str(u_id),
@@ -110,7 +116,7 @@ class AiChat(WebSocketEndpoint):
             await cls.__print_online_num()
         except WebSocketDisconnect:
             await web_socket.close()
-            print("断开了连接")
+            log.error("断开了连接")
             await cls.__print_online_num()
 
     # WebSocket 消息接收
@@ -118,11 +124,11 @@ class AiChat(WebSocketEndpoint):
     async def on_receive(cls, web_socket: WebSocket, msg: Any):
         try:
             msg = AiChatPullMessage(**msg)
-            print(f"收到了来自[{msg.user}]的[{msg.action}]消息:[{msg.data}]")
+            log.error(f"收到了来自[{msg.user}]的[{msg.action}]消息:[{msg.data}]")
             # 开启异步线程处理问题
             web_socket.app.state.aiChatThreadPool.submit(aichat_process_task, msg)
         except Exception as e:
-            print(e)
+            log.error(e)
 
     # WebSocket 连接断开
     @classmethod
@@ -135,7 +141,7 @@ class AiChat(WebSocketEndpoint):
                 u_id = con["u_id"]
                 # 移除已经断开的连接
                 cls.active_connections.remove(con)
-        print(f"丢失连接<<<客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
+        log.error(f"丢失连接<<<客户端IP:{real_ip} 来源:{real_host} ID: {str(u_id)}")
         await cls.__print_online_num()
 
     @classmethod
@@ -143,7 +149,7 @@ class AiChat(WebSocketEndpoint):
         """
         打印当前在线人数
         """
-        print(f"当前AiChat在线用户数:{len(cls.active_connections)}")
+        log.info(f"当前AiChat在线用户数:{len(cls.active_connections)}")
 
     @classmethod
     async def send_message(cls, message):
@@ -169,7 +175,6 @@ class AiChat(WebSocketEndpoint):
                     "data": data
                 }
                 content = json.dumps(structure)
-                # print(f"主动推送数据:{content}")
                 await con["con"].send_text(content)
         if is_online:
             return True

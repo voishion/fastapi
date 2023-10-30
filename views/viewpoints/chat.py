@@ -11,6 +11,7 @@
 from fastapi import Request, APIRouter
 from fastapi.responses import HTMLResponse
 from api.endpoints.chat import AiChat
+from logger import log
 from core import Utils
 from core.Response import success, fail
 from schemas.base import AiChatPushMessage, BaseResp
@@ -31,7 +32,11 @@ async def chat(request: Request):
 
 # 新的HTTP端点用于发送消息
 @router.post("/push_msg", summary="所有角色下拉选项专用", response_model=BaseResp)
-async def send_message(message: AiChatPushMessage):
+async def send_message(request: Request, message: AiChatPushMessage):
+    # 获取请求的头部信息
+    request_headers = dict(request.headers)
+    # 记录请求头信息到日志
+    log.info(f"Request Headers: {request_headers}")
     result = await AiChat.send_message(message)
     if result:
         return success(msg="推送成功")
