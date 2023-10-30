@@ -26,7 +26,8 @@ function managerWebSocket() {
     if (webSocket) {
         console.log('websocket client is open...');
         webSocket.onmessage = function (event) {
-            printChatGPTResponse(JSON.parse(event.data))
+            let response = JSON.parse(event.data);
+            printChatGPTResponse(response.data.content)
         };
         // 断开监听
         webSocket.onclose = () => {
@@ -44,20 +45,26 @@ function clearWebSocket() {
     webSocket = null;
 }
 
-function printChatGPTResponse(response) {
-    let message = response.data.content;
+function printChatGPTResponse(message) {
     let index = 0;
     const responseText = document.getElementById("chatgpt-response");
+    responseText.innerHTML = '';
     // 创建一个定时器，每隔一段时间打印一个字符
     const interval = setInterval(function () {
             responseText.innerHTML += message[index];
             index++;
             // 当打印完成时，清除定时器
             if (index >= message.length) {
+                scrollToBottom();
                 clearInterval(interval);
             }
         },
         50); // 每隔50毫秒打印一个字符
+}
+
+function scrollToBottom() {
+    const chatgptResponse = $('#chatgpt-response');
+    chatgptResponse.scrollTop(chatgptResponse[0].scrollHeight);
 }
 
 $(document).ready(function () {
@@ -74,6 +81,7 @@ $(document).ready(function () {
             const data = {action: 'chat', 'user': user_id, data: message};
             webSocket.send(JSON.stringify(data));
             chatGptInput.val('')
+            printChatGPTResponse('正在思考，请等待......')
         }
     })
 });

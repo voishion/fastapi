@@ -18,7 +18,7 @@
     color: #333;
     border: 1px solid #ccc;
     border-radius: 10px;
-    overflow: scroll;
+    overflow: auto;
     resize: none;
 }
 
