@@ -20,7 +20,7 @@ log_format = "%(asctime)s - %(levelname)s - [%(module)s] - %(funcName)s - [line:
 log = logging.getLogger()
 log.setLevel(settings.LOG_LEVEL)
 ch = logging.StreamHandler(sys.stdout)
-fh = logging.handlers.RotatingFileHandler("./server.log", mode="a", maxBytes=100 * 1024, backupCount=3)
+fh = logging.handlers.RotatingFileHandler("./logs/server.log", mode="a", maxBytes=100 * 1024, backupCount=3)
 
 formatter = logging.Formatter(log_format)
 ch.setFormatter(formatter)
