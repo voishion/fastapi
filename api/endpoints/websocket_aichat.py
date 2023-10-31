@@ -13,11 +13,15 @@ import json
 import time
 from typing import Any
 
+import jwt
 import openai
 from fastapi import APIRouter
+from jwt import PyJWTError
+from pydantic import ValidationError
 from starlette.endpoints import WebSocketEndpoint
 from starlette.websockets import WebSocket, WebSocketDisconnect
 
+from config import settings
 from schemas.base import AiChatPullMessage, AiChatPushMessage
 
 from logger import log
@@ -76,6 +80,31 @@ def aichat_process_msg_push(user_id: str, msg: str):
     asyncio.run(AiChat.send_message(pushMsg))
 
 
+def aichat_check_token(token: str):
+    """
+    AiChat用户验证
+    :param token:
+    :return:
+    """
+    try:
+        # token解密
+        payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        if payload:
+            # 用户ID
+            uid = payload.get("user_id", "NULL")
+            if uid == 'NULL':
+                return False
+        else:
+            return False
+    except jwt.ExpiredSignatureError:
+        return False
+    except jwt.InvalidTokenError:
+        return False
+    except (PyJWTError, ValidationError):
+        return False
+    return uid
+
+
 class AiChat(WebSocketEndpoint):
     """
     AiChat聊天类
@@ -98,11 +127,18 @@ class AiChat(WebSocketEndpoint):
     # WebSocket 连接
     @classmethod
     async def on_connect(cls, web_socket: WebSocket):
-        u_id = web_socket.query_params.get("u_id")
+        u_type = web_socket.query_params.get("u_type")
+        token = web_socket.headers.get("sec-websocket-protocol")
         real_ip = web_socket.headers.get('x-forwarded-for')
         real_host = web_socket.headers.get("host")
         try:
-            await web_socket.accept(subprotocol=None)
+            if not u_type or not token:
+                raise WebSocketDisconnect
+            u_id = aichat_check_token(token)
+            if not u_id:
+                raise WebSocketDisconnect
+            await web_socket.accept(subprotocol=token)
+
             for con in cls.active_connections:
                 # 把历史连接移除
                 if con["u_id"] == u_id:
@@ -116,8 +152,8 @@ class AiChat(WebSocketEndpoint):
             await cls.__print_online_num()
         except WebSocketDisconnect:
             await web_socket.close()
-            log.error("断开了连接")
             await cls.__print_online_num()
+            log.error("断开了连接")
 
     # WebSocket 消息接收
     @classmethod

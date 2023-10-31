@@ -8,18 +8,24 @@ function init() {
             }
         }
     });
+
+    localStorage.setItem('Authorization', $('#token').val());
 }
 
 function connectWebSocket() {
-    let user_id = $('#user_id').val();
-    const protocol = window.location.protocol.indexOf('https:') === 0 ? 'wss' : 'ws';
-    webSocket = new WebSocket(`${protocol}://${window.location.host}/ws/aichat/test?u_id=${user_id}`);
-    webSocket.onopen = () => managerWebSocket();
-    webSocket.onerror = () => {
-        console.log('websocket client happened error');
-        clearWebSocket();
-        setTimeout(connectWebSocket, 3000);
-    };
+    const token = localStorage.getItem('Authorization') || '';
+    if (token) {
+        const protocol = window.location.protocol.indexOf('https:') === 0 ? 'wss' : 'ws';
+        webSocket = new WebSocket(`${protocol}://${window.location.host}/ws/aichat/test?u_type=1`, token);
+        webSocket.onopen = () => managerWebSocket();
+        webSocket.onerror = () => {
+            console.log('websocket client happened error');
+            clearWebSocket();
+            setTimeout(connectWebSocket, 3000);
+        };
+    } else {
+        console.log('token is null')
+    }
 }
 
 function managerWebSocket() {
