@@ -10,7 +10,7 @@
 """
 from fastapi import Request, APIRouter
 from fastapi.responses import HTMLResponse
-from api.endpoints.chat import AiChat
+from api.endpoints.websocket_aichat import AiChat
 from logger import log
 from core import Utils
 from core.Response import success, fail

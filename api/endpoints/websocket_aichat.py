@@ -3,7 +3,7 @@
 """
     Desc    : Ai智能聊天
     Author  : Lu Li (李露)
-    File    : chat.py
+    File    : websocket_aichat.py
     Date    : 2023/10/29 16:57
     Site    : https://gitee.com/voishion
     Project : fastapi
