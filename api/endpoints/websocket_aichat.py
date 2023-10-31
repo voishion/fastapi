@@ -24,7 +24,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect
 from config import settings
 from schemas.base import AiChatPullMessage, AiChatPushMessage
 
-from logger import log
+from loguru import logger as log
 
 router = APIRouter()
 

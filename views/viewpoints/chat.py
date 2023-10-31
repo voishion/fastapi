@@ -12,7 +12,7 @@ from fastapi import Request, APIRouter
 from fastapi.responses import HTMLResponse
 from api.endpoints.websocket_aichat import AiChat
 from core.Auth import create_access_token
-from logger import log
+from loguru import logger as log
 from core import Utils
 from core.Response import success, fail
 from schemas.base import AiChatPushMessage, BaseResp
