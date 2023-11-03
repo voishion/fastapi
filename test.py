@@ -10,7 +10,14 @@
 """
 import uuid
 
-print(str(uuid.uuid1()).replace('-', ''))
-print(uuid.uuid3(uuid.NAMESPACE_DNS, "test"))
-print(uuid.uuid4()) # b983907d-ab25-4002-9dad-c37968936ba8
-print(str(uuid.uuid5(uuid.NAMESPACE_DNS, "test")).replace("-", ""))
+
+from datetime import datetime
+
+time_data = '2023-11-01T00:30'
+time_data = '2023-11-01T30:01'
+format_string = '%Y-%m-%dT%H:%M'
+parsed_time = datetime.strptime(time_data, format_string)
+
+
+print(parsed_time)
+

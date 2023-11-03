@@ -11,6 +11,7 @@
 import asyncio
 import json
 import time
+from datetime import datetime
 from typing import Any
 
 import jwt
@@ -33,6 +34,9 @@ openai.api_base = "https://esb.gt.cn/v1"
 
 openai.api_key = "any"
 
+date_format = "%B %d, %Y"
+time_format = "%H:%M"
+
 
 # 耗时的任务函数
 def aichat_process_task(msg: AiChatPullMessage):
@@ -42,16 +46,21 @@ def aichat_process_task(msg: AiChatPullMessage):
     # OpenAI API参数详解
     # https://blog.csdn.net/watson2017/article/details/129055329
     response = openai.ChatCompletion.create(
-        model="chatglm2-6b",
+        model="chatglm3",
         messages=[
-            {"role": "system", "content": ""},
+            {"role": "system",
+             "content": f"You are Smart Xiaotong, the large-model artificial intelligence assistant of General "
+                        f"Technology Group. Today is {datetime.now().strftime(date_format)}, and the current "
+                        f"time is {datetime.now().strftime(time_format)}, Answer the following questions as best "
+                        f"as you can. You have access to the following tools:"},
             {"role": "user", "content": msg.data}
         ],
         max_tokens=1024,
         temperature=0.75,
         stream=True,
-        headers={
-            '_idp_session': 'MTAuMTMzLjY4LjE0NQ%3D%3D%7COGEzNGM5ZjAxNzE1MjVkZjllYTAxNzIwOWVlODkxYTA4YmQwZmE3NGE5NWMxNTJiMDU3NzFkZWM1NjIwODBjOA%3D%3D%7CmvflOeoXJyq9cbkH536tKwvw6Fc%3D'}
+        # headers={
+        #     '_idp_session': 'MTAuMTMzLjY4LjE0NQ%3D%3D%7COGEzNGM5ZjAxNzE1MjVkZjllYTAxNzIwOWVlODkxYTA4YmQwZmE3NGE5NWMxNT'
+        #                     'JiMDU3NzFkZWM1NjIwODBjOA%3D%3D%7CmvflOeoXJyq9cbkH536tKwvw6Fc%3D'}
     )
     request_time = time.time() - start_time
     t = None
@@ -61,7 +70,9 @@ def aichat_process_task(msg: AiChatPullMessage):
         # log.info(type(i))
         # log.info(json.dumps(i))
         if "content" in i.choices[0].delta:
-            aichat_process_msg_push(msg.user, str(i.choices[0].delta.content))
+            content = str(i.choices[0].delta.content)
+            if content != "None":
+                aichat_process_msg_push(msg.user, content)
     tts = t - start_time
     ats = tts - request_time
     log.error(f'AiChatGPT回答结束，总耗时:{tts:.2f} s，请求耗时:{request_time:.2f} s，回答耗时:{ats:.2f} s')
@@ -159,7 +170,12 @@ class AiChat(WebSocketEndpoint):
     @classmethod
     async def on_receive(cls, web_socket: WebSocket, msg: Any):
         try:
+            token = web_socket.headers.get("Sec-Websocket-Protocol")
+            u_id = aichat_check_token(token)
+            if not u_id:
+                raise WebSocketDisconnect
             msg = AiChatPullMessage(**msg)
+            msg.user = u_id
             log.error(f"收到了来自[{msg.user}]的[{msg.action}]消息:[{msg.data}]")
             # 开启异步线程处理问题
             web_socket.app.state.aiChatThreadPool.submit(aichat_process_task, msg)
